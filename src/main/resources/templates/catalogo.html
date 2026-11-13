@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Catálogo de Productos - Actividad 3</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f0f3f8; color: #20304b; font-family: Arial, sans-serif; }
+        main { max-width: 1080px; margin: 36px auto; padding: 0 16px; }
+        header { margin-bottom: 24px; }
+        h1 { margin: 0 0 9px; color: #194177; font-size: 29px; }
+        p { line-height: 1.5; }
+        .sub { color: #66758a; margin: 0; }
+        .bloque { background: white; border: 1px solid #dfe6ef; border-radius: 10px; padding: 22px; margin-bottom: 18px; }
+        h2 { color: #194177; font-size: 18px; margin: 0 0 15px; }
+        input, select { padding: 10px; min-width: 130px; border: 1px solid #bdcada; border-radius: 5px; background: white; font: inherit; max-width: 100%; }
+        input[type=number] { width: 140px; }
+        button { padding: 10px 15px; border: 0; border-radius: 5px; background: #1d4a86; color: white; cursor: pointer; font-weight: 600; }
+        button:hover { background: #153762; }
+        button.peligro { background: #b73c42; }
+        button.peligro:hover { background: #8b2d34; }
+        .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .dos { display: grid; grid-template-columns: 1fr 1.6fr; gap: 18px; }
+        table { border-collapse: collapse; width: 100%; background: white; }
+        td, th { text-align: left; padding: 11px; border-bottom: 1px solid #dfe6ef; vertical-align: top; }
+        th { background: #eaf0f8; color: #194177; }
+        .tabla { overflow-x: auto; }
+        .acciones { min-width: 225px; }
+        details { margin-bottom: 10px; }
+        summary { cursor: pointer; color: #194177; text-decoration: underline; margin-bottom: 8px; }
+        .editar { display: grid; gap: 7px; margin: 6px 0 8px; }
+        .editar input, .editar select { width: 100%; }
+        .vacio { color: #69778b; margin-top: 12px; }
+        .pie { color: #6b7787; text-align: center; font-size: 13px; margin: 18px 0; }
+        @media (max-width: 760px) { .dos { grid-template-columns: 1fr; } h1 { font-size: 24px; } }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Catálogo de Productos</h1>
+        <p class="sub">Actividad 3 · Spring Boot · MySQL · Relación Producto-Categoría</p>
+    </header>
+
+    <div class="dos">
+        <section class="bloque">
+            <h2>1. Registrar categoría</h2>
+            <form class="fila" th:action="@{/productos/categorias}" method="post">
+                <input name="nombre" type="text" placeholder="Ej. Papelería" required maxlength="80">
+                <button type="submit">Agregar</button>
+            </form>
+        </section>
+
+        <section class="bloque">
+            <h2>2. Registrar producto</h2>
+            <form class="fila" th:action="@{/productos/guardar}" method="post">
+                <input name="nombre" type="text" placeholder="Nombre del producto" required maxlength="100">
+                <input name="precio" type="number" placeholder="Precio" step="0.01" min="0.01" required>
+                <select name="categoriaId" required>
+                    <option value="">Elegir categoría</option>
+                    <option th:each="c : ${categorias}" th:value="${c.id}" th:text="${c.nombre}">Categoría</option>
+                </select>
+                <button type="submit">Guardar</button>
+            </form>
+            <p class="vacio" th:if="${#lists.isEmpty(categorias)}">Primero registra una categoría.</p>
+        </section>
+    </div>
+
+    <section class="bloque">
+        <h2>3. Productos guardados en MySQL</h2>
+        <form class="fila" th:action="@{/productos}" method="get" style="margin-bottom:16px">
+            <select name="categoriaId">
+                <option value="">Todas las categorías</option>
+                <option th:each="c : ${categorias}" th:value="${c.id}" th:text="${c.nombre}"
+                        th:selected="${categoriaSeleccionada != null and categoriaSeleccionada == c.id}">Categoría</option>
+            </select>
+            <button type="submit">Filtrar</button>
+        </form>
+        <div class="tabla">
+            <table>
+                <thead><tr><th>ID</th><th>Producto</th><th>Precio</th><th>Categoría</th><th>Acciones CRUD</th></tr></thead>
+                <tbody>
+                    <tr th:each="p : ${productos}">
+                        <td th:text="${p.id()}">1</td>
+                        <td th:text="${p.nombre()}">Cuaderno</td>
+                        <td th:text="${p.precio()}">45.00</td>
+                        <td th:text="${p.categoriaNombre()}">Papelería</td>
+                        <td class="acciones">
+                            <details>
+                                <summary>Editar producto</summary>
+                                <form class="editar" th:action="@{/productos/editar/{id}(id=${p.id()})}" method="post">
+                                    <input name="nombre" th:value="${p.nombre()}" required>
+                                    <input type="number" name="precio" step="0.01" min="0.01" th:value="${p.precio()}" required>
+                                    <select name="categoriaId" required>
+                                        <option th:each="c : ${categorias}" th:value="${c.id}" th:text="${c.nombre}"
+                                                th:selected="${c.id == p.categoriaId()}">Categoría</option>
+                                    </select>
+                                    <button type="submit">Guardar cambios</button>
+                                </form>
+                            </details>
+                            <form th:action="@{/productos/eliminar/{id}(id=${p.id()})}" method="post">
+                                <button class="peligro" type="submit">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p th:if="${#lists.isEmpty(productos)}" class="vacio">Todavía no hay productos en esta categoría. Puedes registrar uno arriba.</p>
+    </section>
+    <p class="pie">Los cambios se almacenan en MySQL mediante Spring Data JPA. API JSON disponible en /api/productos.</p>
+</main>
+</body>
+</html>
